@@ -1,0 +1,87 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.13;
+
+interface IERC20 {
+    function transferFrom(address from, address to, uint amount) external;
+    function transfer(address to, uint amount) external;
+}
+
+contract Freelance {
+    IERC20 private immutable _TOKEN;
+
+    address private immutable _OWNER;
+
+    uint public questsCounter;
+
+    enum Claimed {                                              
+        onWatch,                //0
+        onWork,                 //1
+        onCancel,               //2
+        onChecking              //3
+    }                           
+
+    struct Quest {
+        address freelancer;
+        uint cost;
+        uint points;
+        uint flags;                                 //метка выполнено\невыполнено
+        Claimed status;
+        bool isApproved;
+        mapping(uint => string) pointsExtended;             //возвращаем текст задач
+    }
+
+    mapping(uint => Quest) private quests;
+
+    constructor(address token_) {
+        _TOKEN = IERC20(token_);
+        _OWNER = msg.sender;
+    }
+
+    modifier onlyOwner {
+        require(_OWNER == msg.sender);
+        _;
+    }
+
+    function createQuest(string[] memory extended, address freelancer, uint _cost) external onlyOwner {
+        Quest storage quest = quests[questsCounter];       //ЗАЧЕМ ТАК??
+        quest.freelancer = freelancer;
+        quest.cost = _cost;             //ЗАЧЕМ МОДИФИКАТОР??
+        _TOKEN.transferFrom(msg.sender, address(this), _cost);
+        quest.points = extended.length;
+        for (uint i = 0; i < quest.points; i++) {              //все строчки массива помещаем в маппинг 
+            quest.pointsExtended[i] = extended[i];
+        }
+        questsCounter++;
+    }
+
+    function startWork(uint _workId) external {
+        Quest storage quest = quests[_workId];
+        require(quest.freelancer == msg.sender);
+        quest.status = Claimed.onWatch;
+    }
+
+    function cancelWork(uint _workId) external {
+        Quest storage quest = quests[_workId];
+        require(quest.freelancer == msg.sender);
+        quest.status = Claimed.onCancel;
+    }
+
+    function upflagWork(uint _workId) external {
+        Quest storage quest = quests[_workId];      
+        require(quest.freelancer == msg.sender);
+        require(quest.status == Claimed.onWork);
+        require(quest.flags < quest.points);
+        quest.flags++;
+        quest.status = Claimed.onChecking;
+    }
+
+    function approveFlag(uint _workId) external onlyOwner {
+        Quest storage quest = quests[_workId];                          //подгрузка пунктов задания
+        quest.status = Claimed.onWork;                                          //изменение статуса в случаи успех проверка - можно работать на сл пунктом
+        if (quest.flags == quest.points) {
+            quest.isApproved = true;
+            _TOKEN.transfer(quest.freelancer, quest.cost);
+        }
+    }
+
+}
