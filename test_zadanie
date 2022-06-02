@@ -45,13 +45,13 @@ contract Freelance {
     function createQuest(string[] memory extended, address freelancer, uint _cost) external onlyOwner {
         Quest storage quest = quests[questsCounter];
         quest.freelancer = freelancer;
-        quest.cost = _cost;
-        _TOKEN.transferFrom(msg.sender, address(this), _cost);
+        quest.cost = _cost;            
+        //_TOKEN.transferFrom(msg.sender, address(this), _cost);
         quest.points = extended.length;
         for (uint i = 0; i < quest.points; i++) {              //все строчки массива помещаем в маппинг 
             quest.pointsExtended[i] = extended[i];
         }
-        questsCounter++;
+        
     }
 
     function startWork(uint _workId) external {
@@ -80,7 +80,7 @@ contract Freelance {
         quest.status = Claimed.onWork;                                          //изменение статуса в случаи успех проверка - можно работать на сл пунктом
         if (quest.flags == quest.points) {
             quest.isApproved = true;
-            _TOKEN.transfer(quest.freelancer, quest.cost);
+            //_TOKEN.transfer(quest.freelancer, quest.cost);
         }
     }
 
