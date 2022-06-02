@@ -43,9 +43,9 @@ contract Freelance {
     }
 
     function createQuest(string[] memory extended, address freelancer, uint _cost) external onlyOwner {
-        Quest storage quest = quests[questsCounter];       //ЗАЧЕМ ТАК??
+        Quest storage quest = quests[questsCounter];
         quest.freelancer = freelancer;
-        quest.cost = _cost;             //ЗАЧЕМ МОДИФИКАТОР??
+        quest.cost = _cost;
         _TOKEN.transferFrom(msg.sender, address(this), _cost);
         quest.points = extended.length;
         for (uint i = 0; i < quest.points; i++) {              //все строчки массива помещаем в маппинг 
